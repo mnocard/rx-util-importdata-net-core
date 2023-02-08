@@ -9,7 +9,7 @@ namespace ImportData
 {
   class Order : Entity
   {
-    public int PropertiesCount = 16;
+    public int PropertiesCount = 14;
     /// <summary>
     /// Получить наименование число запрашиваемых параметров.
     /// </summary>
@@ -63,7 +63,6 @@ namespace ImportData
 
       variableForParameters = this.Parameters[shift + 4].Trim();
       var businessUnit = BusinessLogic.GetEntityWithFilter<IBusinessUnits>(u => u.Name == variableForParameters, exceptionList, logger);
-
 
       if (businessUnit == null)
       {
@@ -152,6 +151,8 @@ namespace ImportData
         return exceptionList;
       }
 
+      var regState = this.Parameters[shift + 13].Trim();
+
       try
       {
         var regDateBeginningOfDay = BeginningOfDay(regDate.UtcDateTime);
@@ -162,11 +163,8 @@ namespace ImportData
           order = new IOrders();
 
         order.Name = fileNameWithoutExtension;
-        order.DocumentRegister = documentRegisters;
         order.Created = DateTimeOffset.UtcNow;
         order.Name = fileNameWithoutExtension;
-        order.RegistrationDate = regDate != DateTimeOffset.MinValue ? regDate.UtcDateTime : Constants.defaultDateTime;
-        order.RegistrationNumber = regNumber;
         order.DocumentKind = documentKind;
         order.Subject = subject;
         order.BusinessUnit = businessUnit;
@@ -174,8 +172,13 @@ namespace ImportData
         order.Assignee = assignee;
         order.PreparedBy = preparedBy;
         order.OurSignatory = ourSignatory;
-        order.LifeCycleState = lifeCycleState;
         order.Note = note;
+
+        order.DocumentRegister = documentRegisters;
+        order.RegistrationDate = regDate != DateTimeOffset.MinValue ? regDate.UtcDateTime : Constants.defaultDateTime;
+        order.RegistrationNumber = regNumber;
+        if (!string.IsNullOrEmpty(order.RegistrationNumber) && order.DocumentRegister != null)
+          order.RegistrationState = BusinessLogic.GetRegistrationsState(regState);
 
         var createdOrder = BusinessLogic.CreateEntity<IOrders>(order, exceptionList, logger);
 
@@ -195,6 +198,10 @@ namespace ImportData
 
             return exceptionList;
           }
+
+        // Дополнительно обновляем свойство Состояние, так как после установки регистрационного номера Состояние сбрасывается в значение "В разработке"
+        if (!string.IsNullOrEmpty(lifeCycleState))
+          createdOrder = createdOrder.UpdateLifeCycleState(createdOrder, lifeCycleState);
       }
       catch (Exception ex)
       {
