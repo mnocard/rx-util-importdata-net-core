@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using ImportData.IntegrationServicesClient.Models;
 using NLog;
-using ImportData.IntegrationServicesClient.Models;
+using System;
+using System.Collections.Generic;
 
 namespace ImportData.Entities.Databooks
 {
-  public class Login : Entity
+    public class Login : Entity
   {
-    public int PropertiesCount = 5;
+    public int PropertiesCount = 4;
 
     /// <summary>
     /// Получить наименование число запрашиваемых параметров.
@@ -39,18 +39,7 @@ namespace ImportData.Entities.Databooks
         return exceptionList;
       }
 
-      var authType = this.Parameters[shift + 1].Trim();
-
-      if (string.IsNullOrEmpty(authType))
-      {
-        var message = string.Format("Не заполнено поле \"Тип аутентификации\".");
-        exceptionList.Add(new Structures.ExceptionsStruct { ErrorType = Constants.ErrorTypes.Error, Message = message });
-        logger.Error(message);
-
-        return exceptionList;
-      }
-
-      var lastName = this.Parameters[shift + 2].Trim();
+      var lastName = this.Parameters[shift + 1].Trim();
 
       if (string.IsNullOrEmpty(lastName))
       {
@@ -61,7 +50,7 @@ namespace ImportData.Entities.Databooks
         return exceptionList;
       }
 
-      var firstName = this.Parameters[shift + 3].Trim();
+      var firstName = this.Parameters[shift + 2].Trim();
 
       if (string.IsNullOrEmpty(firstName))
       {
@@ -71,7 +60,7 @@ namespace ImportData.Entities.Databooks
 
         return exceptionList;
       }
-      var middleName = this.Parameters[shift + 4].Trim();
+      var middleName = this.Parameters[shift + 3].Trim();
       var emplName = string.IsNullOrWhiteSpace(middleName) ? string.Format("{0} {1}", lastName, firstName) : string.Format("{0} {1} {2}", lastName, firstName, middleName);
       var employee = BusinessLogic.GetEntityWithFilter<IEmployees>(x => x.Name == emplName, exceptionList, logger);
 
@@ -98,11 +87,14 @@ namespace ImportData.Entities.Databooks
             login.TypeAuthentication = "Windows";
             login.NeedChangePassword = false;
             login.Status = "Active";
-            BusinessLogic.CreateEntity<ILogins>(login, exceptionList, logger);
-            return exceptionList;
+            login = BusinessLogic.CreateEntity<ILogins>(login, exceptionList, logger);
           }
-          employee.Login = login;
-          BusinessLogic.UpdateEntity<IEmployees>(employee, exceptionList, logger);
+
+          if (login != null)
+          {
+              employee.Login = login;
+              BusinessLogic.UpdateEntity<IEmployees>(employee, exceptionList, logger);
+          }
         }
       }
       catch (Exception ex)

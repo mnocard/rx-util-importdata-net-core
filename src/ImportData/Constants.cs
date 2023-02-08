@@ -76,7 +76,8 @@ namespace ImportData
         {ImportDepartments, ImportDepartments},
         {ImportEmployees, ImportEmployees},
         {ImportContacts, ImportContacts},
-        {ImportCompanyDirectives, ImportCompanyDirectives}
+        {ImportCompanyDirectives, ImportCompanyDirectives},
+        {ImportLogins, ImportLogins}
       };
     }
 

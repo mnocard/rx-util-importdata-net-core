@@ -1,7 +1,7 @@
 ﻿namespace ImportData.IntegrationServicesClient.Models
 {
     [EntityName("Учетная запись")]
-    public class ILogins : IRecipients
+    public class ILogins
     {
         public int Id { get; set; }
         public bool? NeedChangePassword { get; set; }
