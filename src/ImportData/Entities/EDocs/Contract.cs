@@ -10,7 +10,7 @@ namespace ImportData
 {
   public class Contract : Entity
   {
-    public int PropertiesCount = 18;
+    public int PropertiesCount = 19;
     /// <summary>
     /// Получить наименование число запрашиваемых параметров.
     /// </summary>
@@ -217,6 +217,8 @@ namespace ImportData
         return exceptionList;
       }
 
+      var regState = this.Parameters[shift + 18].Trim();
+
       try
       {
         var regDateBeginningOfDay = BeginningOfDay(regDate.UtcDateTime);
@@ -231,7 +233,6 @@ namespace ImportData
         // Обязательные поля.
         contract.Name = fileNameWithoutExtension;
         contract.Created = DateTimeOffset.UtcNow;
-        contract.DocumentRegister = documentRegisters;
         contract.Counterparty = counterparty;
         contract.DocumentKind = documentKind;
         contract.DocumentGroup = contractCategory;
@@ -245,8 +246,12 @@ namespace ImportData
         contract.ResponsibleEmployee = responsibleEmployee;
         contract.OurSignatory = ourSignatory;
         contract.Note = note;
+                
+        contract.DocumentRegister = documentRegisters;
         contract.RegistrationDate = regDate != DateTimeOffset.MinValue ? regDate.UtcDateTime : Constants.defaultDateTime;
         contract.RegistrationNumber = regNumber;
+        if (!string.IsNullOrEmpty(contract.RegistrationNumber) && contract.DocumentRegister != null)
+          contract.RegistrationState = BusinessLogic.GetRegistrationsState(regState);
 
         var createdContract = BusinessLogic.CreateEntity<IContracts>(contract, exceptionList, logger);
 

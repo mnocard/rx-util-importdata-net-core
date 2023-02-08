@@ -9,7 +9,7 @@ namespace ImportData
 {
   class SupAgreement : Entity
   {
-    public int PropertiesCount = 22;
+    public int PropertiesCount = 20;
     /// <summary>
     /// Получить наименование число запрашиваемых параметров.
     /// </summary>
@@ -228,6 +228,8 @@ namespace ImportData
         return exceptionList;
       }
 
+      var regState = this.Parameters[shift + 19].Trim();
+
       try
       {
         var regDateBeginningOfDay = BeginningOfDay(regDate.UtcDateTime);
@@ -240,11 +242,8 @@ namespace ImportData
 
         supAgreement.Name = fileNameWithoutExtension;
         supAgreement.Created = DateTimeOffset.UtcNow;
-        supAgreement.DocumentRegister = documentRegisters;
         supAgreement.LeadingDocument = leadingDocument;
         supAgreement.Counterparty = counterparty;
-        supAgreement.RegistrationDate = regDate != DateTimeOffset.MinValue ? regDate.UtcDateTime : Constants.defaultDateTime;
-        supAgreement.RegistrationNumber = regNumber;
         supAgreement.DocumentKind = documentKind;
         supAgreement.Subject = subject;
         supAgreement.BusinessUnit = businessUnit;
@@ -257,6 +256,12 @@ namespace ImportData
         supAgreement.ResponsibleEmployee = responsibleEmployee;
         supAgreement.OurSignatory = ourSignatory;
         supAgreement.Note = note;
+
+        supAgreement.DocumentRegister = documentRegisters;
+        supAgreement.RegistrationNumber = regNumber;
+        supAgreement.RegistrationDate = regDate != DateTimeOffset.MinValue ? regDate.UtcDateTime : Constants.defaultDateTime;
+        if (!string.IsNullOrEmpty(supAgreement.RegistrationNumber) && supAgreement.DocumentRegister != null)
+          supAgreement.RegistrationState = BusinessLogic.GetRegistrationsState(regState);
 
         var createdSupAgreement = BusinessLogic.CreateEntity<ISupAgreements>(supAgreement, exceptionList, logger);
 
