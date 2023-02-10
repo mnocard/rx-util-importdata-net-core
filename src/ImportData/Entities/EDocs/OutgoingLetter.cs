@@ -7,7 +7,7 @@ using System.IO;
 
 namespace ImportData
 {
-    class OutgoingLetter : Entity
+  class OutgoingLetter : Entity
   {
     public int PropertiesCount = 12;
     /// <summary>

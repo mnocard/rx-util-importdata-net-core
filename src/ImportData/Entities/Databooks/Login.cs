@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace ImportData.Entities.Databooks
 {
-    public class Login : Entity
+  public class Login : Entity
   {
     public int PropertiesCount = 4;
 

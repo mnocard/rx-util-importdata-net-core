@@ -7,7 +7,7 @@ using System.IO;
 
 namespace ImportData
 {
-    class CompanyDirective : Entity
+  class CompanyDirective : Entity
   {
     public int PropertiesCount = 14;
 

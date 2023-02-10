@@ -7,7 +7,7 @@ using System.IO;
 
 namespace ImportData
 {
-    class Addendum : Entity
+  class Addendum : Entity
   {
     public int PropertiesCount = 16;
     /// <summary>
@@ -118,7 +118,7 @@ namespace ImportData
 
         if (!string.IsNullOrEmpty(this.Parameters[shift + 10].Trim()) && lifeCycleState == null)
         {
-          var message = string.Format("Не найдено соответствующее значение состояния \"{0}\".", this.Parameters[shift + 14]);
+          var message = string.Format("Не найдено соответствующее значение состояния \"{0}\".", this.Parameters[shift + 10]);
           exceptionList.Add(new Structures.ExceptionsStruct { ErrorType = Constants.ErrorTypes.Error, Message = message });
           logger.Error(message);
 

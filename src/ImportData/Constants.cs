@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ImportData
 {
-    class Constants
+  class Constants
   {
     public class RolesGuides
     {
