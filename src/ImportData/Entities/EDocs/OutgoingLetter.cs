@@ -1,15 +1,15 @@
-﻿using System;
+﻿using ImportData.IntegrationServicesClient.Models;
+using NLog;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
-using NLog;
-using ImportData.IntegrationServicesClient.Models;
 using System.IO;
 
 namespace ImportData
 {
   class OutgoingLetter : Entity
   {
-    public int PropertiesCount = 15;
+    public int PropertiesCount = 12;
     /// <summary>
     /// Получить наименование число запрашиваемых параметров.
     /// </summary>
@@ -103,7 +103,7 @@ namespace ImportData
       variableForParameters = this.Parameters[shift + 9].Trim();
       var deliveryMethod = BusinessLogic.GetEntityWithFilter<IMailDeliveryMethods>(m => m.Name == variableForParameters, exceptionList, logger);
 
-      if (!string.IsNullOrEmpty(this.Parameters[shift + 10].Trim()) && deliveryMethod == null)
+      if (!string.IsNullOrEmpty(this.Parameters[shift + 9].Trim()) && deliveryMethod == null)
       {
         var message = string.Format("Не найден Способ доставки \"{2}\". Входящее письмо: \"{0} {1}\". ", regNumber, regDate.ToString(), this.Parameters[shift + 9].Trim());
         exceptionList.Add(new Structures.ExceptionsStruct { ErrorType = Constants.ErrorTypes.Warn, Message = message });
@@ -123,6 +123,8 @@ namespace ImportData
         return exceptionList;
       }
 
+      var regState = this.Parameters[shift + 11].Trim();
+
       try
       {
         var regDateBeginningOfDay = BeginningOfDay(regDate.UtcDateTime);
@@ -130,16 +132,13 @@ namespace ImportData
             x.RegistrationDate == regDateBeginningOfDay &&
             x.DocumentRegister == documentRegisters, exceptionList, logger);
         if (outgoingLetter == null)
-          outgoingLetter = new IOutgoingLetters();
+            outgoingLetter = new IOutgoingLetters();
 
         outgoingLetter.Name = fileNameWithoutExtension;
-        outgoingLetter.DocumentRegister = documentRegisters;
         outgoingLetter.Correspondent = counterparty;
 
         outgoingLetter.Created = DateTimeOffset.UtcNow;
-        outgoingLetter.RegistrationDate = regDate != DateTimeOffset.MinValue ? regDate.UtcDateTime : Constants.defaultDateTime;
 
-        outgoingLetter.RegistrationNumber = regNumber;
         outgoingLetter.DocumentKind = documentKind;
         outgoingLetter.Subject = subject;
         outgoingLetter.Department = department;
@@ -149,6 +148,12 @@ namespace ImportData
 
         outgoingLetter.PreparedBy = preparedBy;
         outgoingLetter.Note = note;
+
+        outgoingLetter.DocumentRegister = documentRegisters;
+        outgoingLetter.RegistrationNumber = regNumber;
+        outgoingLetter.RegistrationDate = regDate != DateTimeOffset.MinValue ? regDate.UtcDateTime : Constants.defaultDateTime;
+        if (!string.IsNullOrEmpty(outgoingLetter.RegistrationNumber) && outgoingLetter.DocumentRegister != null)
+          outgoingLetter.RegistrationState = BusinessLogic.GetRegistrationsState(regState);
 
         var createdOutgoingLetter = BusinessLogic.CreateEntity<IOutgoingLetters>(outgoingLetter, exceptionList, logger);
 

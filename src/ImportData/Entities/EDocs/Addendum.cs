@@ -1,16 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using ImportData.IntegrationServicesClient.Models;
 using NLog;
-using ImportData.IntegrationServicesClient.Models;
-using System.IO;
-using System.Linq;
+using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 
 namespace ImportData
 {
   class Addendum : Entity
   {
-    public int PropertiesCount = 22;
+    public int PropertiesCount = 16;
     /// <summary>
     /// Получить наименование число запрашиваемых параметров.
     /// </summary>
@@ -30,8 +29,10 @@ namespace ImportData
     {
       var exceptionList = new List<Structures.ExceptionsStruct>();
       var variableForParameters = this.Parameters[shift + 0].Trim();
+      var regNumber = variableForParameters;
 
       DateTimeOffset regDateLeadingDocument = DateTimeOffset.MinValue;
+      DateTimeOffset regDate = DateTimeOffset.MinValue;
       var regNumberLeadingDocument = string.Empty;
       var documentKind = new IDocumentKinds();
       var subject = string.Empty;
@@ -42,6 +43,17 @@ namespace ImportData
 
       try
       {
+        try
+        {
+          regDate = ParseDate(this.Parameters[shift + 1], NumberStyles.Number | NumberStyles.AllowCurrencySymbol, CultureInfo.CreateSpecificCulture("en-GB"));
+        }
+        catch (Exception)
+        {
+          var message = string.Format("Не удалось обработать дату документа \"{0}\".", this.Parameters[shift + 1]);
+          exceptionList.Add(new Structures.ExceptionsStruct { ErrorType = Constants.ErrorTypes.Error, Message = message });
+          logger.Warn(message);
+        }
+
         regNumberLeadingDocument = this.Parameters[shift + 2];
         try
         {
@@ -102,18 +114,18 @@ namespace ImportData
         filePath = this.Parameters[shift + 9];
         var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
 
-        lifeCycleState = BusinessLogic.GetPropertyLifeCycleState(this.Parameters[shift + 15]);
+        lifeCycleState = BusinessLogic.GetPropertyLifeCycleState(this.Parameters[shift + 10]);
 
-        if (!string.IsNullOrEmpty(this.Parameters[shift + 15].Trim()) && lifeCycleState == null)
+        if (!string.IsNullOrEmpty(this.Parameters[shift + 10].Trim()) && lifeCycleState == null)
         {
-          var message = string.Format("Не найдено соответствующее значение состояния \"{0}\".", this.Parameters[shift + 15]);
+          var message = string.Format("Не найдено соответствующее значение состояния \"{0}\".", this.Parameters[shift + 10]);
           exceptionList.Add(new Structures.ExceptionsStruct { ErrorType = Constants.ErrorTypes.Error, Message = message });
           logger.Error(message);
 
           return exceptionList;
         }
 
-        note = this.Parameters[shift + 17].Trim();
+        note = this.Parameters[shift + 13].Trim();
 
         var regDateBeginningOfDay = BeginningOfDay(regDateLeadingDocument);
         var leadingDocuments = BusinessLogic.GetEntityWithFilter<IOfficialDocuments>(d => d.RegistrationNumber == regNumberLeadingDocument && d.RegistrationDate == regDateBeginningOfDay, exceptionList, logger);
@@ -127,18 +139,23 @@ namespace ImportData
           return exceptionList;
         }
 
-        variableForParameters = this.Parameters[shift + 18].Trim();
-        int idDocumentRegisters = int.Parse(variableForParameters);
-        var documentRegisters = BusinessLogic.GetEntityWithFilter<IDocumentRegisters>(r => r.Id == idDocumentRegisters, exceptionList, logger);
+        variableForParameters = this.Parameters[shift + 14].Trim();
+        var idDocumentRegisters = 0;
+        if (!string.IsNullOrEmpty(variableForParameters))
+          idDocumentRegisters = int.Parse(variableForParameters);
 
+        var documentRegisters = idDocumentRegisters != 0 
+          ? BusinessLogic.GetEntityWithFilter<IDocumentRegisters>(r => r.Id == idDocumentRegisters, exceptionList, logger)
+          : null;
+        
         if (documentRegisters == null)
         {
-          var message = string.Format("Приложение не может быть импортировано. Не найден журнал регистрации по ИД \"{0}\" ", this.Parameters[shift + 17].Trim());
+          var message = string.Format("Приложение не может быть импортировано. Не найден журнал регистрации по ИД \"{0}\" ", this.Parameters[shift + 14].Trim());
           exceptionList.Add(new Structures.ExceptionsStruct { ErrorType = Constants.ErrorTypes.Warn, Message = message });
           logger.Warn(message);
-
-          return exceptionList;
         }
+
+        var regState = this.Parameters[shift + 15].Trim();
 
         try
         {
@@ -150,11 +167,8 @@ namespace ImportData
             addendum = new IAddendums();
 
           // Обязательные поля.
-          addendum.DocumentRegister = documentRegisters;
           addendum.Name = fileNameWithoutExtension;
           addendum.Department = department;
-
-          addendum.RegistrationDate = regDateLeadingDocument != DateTimeOffset.MinValue ? regDateLeadingDocument.UtcDateTime : Constants.defaultDateTime;
 
           addendum.Created = DateTimeOffset.UtcNow;
           addendum.LeadingDocument = leadingDocuments;
@@ -162,6 +176,12 @@ namespace ImportData
           addendum.Subject = subject;
           addendum.LifeCycleState = lifeCycleState;
           addendum.Note = note;
+                    
+          addendum.DocumentRegister = documentRegisters;
+          addendum.RegistrationNumber = regNumber;
+          addendum.RegistrationDate = regDateLeadingDocument != DateTimeOffset.MinValue ? regDateLeadingDocument.UtcDateTime : Constants.defaultDateTime;
+          if (!string.IsNullOrEmpty(addendum.RegistrationNumber) && addendum.DocumentRegister != null)
+            addendum.RegistrationState = BusinessLogic.GetRegistrationsState(regState);
 
           var createdAddendum = BusinessLogic.CreateEntity<IAddendums>(addendum, exceptionList, logger);
 

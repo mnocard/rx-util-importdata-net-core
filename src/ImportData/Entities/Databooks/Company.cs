@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using ImportData.IntegrationServicesClient.Models;
 using NLog;
-using ImportData.IntegrationServicesClient.Models;
+using System;
+using System.Collections.Generic;
 
 namespace ImportData
 {
     class Company : Entity
     {
-        public int PropertiesCount = 22;
+        public int PropertiesCount = 20;
         /// <summary>
         /// Получить наименование число запрашиваемых параметров.
         /// </summary>
@@ -42,14 +42,14 @@ namespace ImportData
             var legalName = this.Parameters[shift + 1].Trim();
 
             variableForParameters = this.Parameters[shift + 2].Trim();
-            var counterparty = BusinessLogic.GetEntityWithFilter<ICounterparties>(c => c.Name == variableForParameters, exceptionList, logger);
-            
-            if (!string.IsNullOrEmpty(this.Parameters[shift + 2].Trim()) && counterparty == null)
+            ICompanies headCompany = null;
+            if (!string.IsNullOrEmpty(variableForParameters))
             {
-                counterparty = BusinessLogic.CreateEntity<ICompanies>(new ICompanies() { Name = this.Parameters[shift + 2].Trim(), Status = "Active" }, exceptionList, logger);
+                var counterparty = BusinessLogic.GetEntityWithFilter<ICounterparties>(c => c.Name == variableForParameters, exceptionList, logger);
+                headCompany = counterparty == null ?
+                    BusinessLogic.CreateEntity<ICompanies>(new ICompanies() { Name = variableForParameters, Status = "Active" }, exceptionList, logger) :
+                    ICompanies.CastCounterpartyToCompany(counterparty);
             }
-
-            var headCompany = ICompanies.CastCounterpartyToCompany(counterparty);
 
             var nonresident = this.Parameters[shift + 3].ToLower() == "да" ? true : false;
             var tin = this.Parameters[shift + 4].Trim(); // ИНН

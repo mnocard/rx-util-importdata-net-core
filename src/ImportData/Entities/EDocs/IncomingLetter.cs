@@ -9,7 +9,7 @@ namespace ImportData
 {
   class IncomingLetter : Entity
   {
-    public int PropertiesCount = 16;
+    public int PropertiesCount = 14;
     /// <summary>
     /// Получить наименование число запрашиваемых параметров.
     /// </summary>
@@ -117,7 +117,7 @@ namespace ImportData
       variableForParameters = this.Parameters[shift + 11].Trim();
       var deliveryMethod = BusinessLogic.GetEntityWithFilter<IMailDeliveryMethods>(m => m.Name == variableForParameters, exceptionList, logger);
 
-      if (!string.IsNullOrEmpty(this.Parameters[shift + 10].Trim()) && deliveryMethod == null)
+      if (!string.IsNullOrEmpty(this.Parameters[shift + 11].Trim()) && deliveryMethod == null)
       {
         var message = string.Format("Не найден Способ доставки \"{2}\". Входящее письмо: \"{0} {1}\". ", regNumber, regDate.ToString(), this.Parameters[shift + 10].Trim());
         exceptionList.Add(new Structures.ExceptionsStruct { ErrorType = Constants.ErrorTypes.Warn, Message = message });
@@ -138,10 +138,8 @@ namespace ImportData
       }
 
       var note = this.Parameters[shift + 10];
-      //variableForParameters = this.Parameters[shift + 13].Trim();
-      //string lifeCyclState = BusinessLogic.GetPropertyLifeCycleState(variableForParameters);
-      variableForParameters = this.Parameters[shift + 13].Trim();
-      string registerState = BusinessLogic.GetRegistrationsState(variableForParameters);
+
+      var regState = this.Parameters[shift + 13].Trim();
 
       try
       {
@@ -153,16 +151,12 @@ namespace ImportData
           incomingLetter = new IIncomingLetters();
 
         incomingLetter.Name = fileNameWithoutExtension;
-        incomingLetter.DocumentRegister = documentRegisters;
         incomingLetter.Created = DateTimeOffset.UtcNow;
-        incomingLetter.RegistrationDate = regDate != DateTimeOffset.MinValue ? regDate.UtcDateTime : Constants.defaultDateTime;
-        incomingLetter.RegistrationNumber = regNumber;
-        incomingLetter.RegistrationState = registerState;
-        //incomingLetter.LifeCycleState = lifeCyclState;
         incomingLetter.Correspondent = counterparty;
         incomingLetter.DocumentKind = documentKind;
         incomingLetter.Subject = subject;
         incomingLetter.Department = department;
+        incomingLetter.BusinessUnit = department.BusinessUnit;
 
         if (department != null)
           incomingLetter.BusinessUnit = department.BusinessUnit;
@@ -172,6 +166,12 @@ namespace ImportData
         incomingLetter.Addressee = addressee;
         incomingLetter.DeliveryMethod = deliveryMethod;
         incomingLetter.Note = note;
+
+        incomingLetter.DocumentRegister = documentRegisters;
+        incomingLetter.RegistrationDate = regDate != DateTimeOffset.MinValue ? regDate.UtcDateTime : Constants.defaultDateTime;
+        incomingLetter.RegistrationNumber = regNumber;
+        if (!string.IsNullOrEmpty(incomingLetter.RegistrationNumber) && incomingLetter.DocumentRegister != null)
+          incomingLetter.RegistrationState = BusinessLogic.GetRegistrationsState(regState);
 
         var createdIncomingLetter = BusinessLogic.CreateEntity<IIncomingLetters>(incomingLetter, exceptionList, logger);
 

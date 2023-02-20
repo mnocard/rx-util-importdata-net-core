@@ -262,7 +262,7 @@ namespace ImportData
 
       try
       {
-        BusinessLogic.CreateEntity<IOfficialDocuments>(edoc, exceptionList, logger);
+        BusinessLogic.UpdateEntity<IOfficialDocuments>(edoc, exceptionList, logger);
       }
       catch (Exception ex)
       {

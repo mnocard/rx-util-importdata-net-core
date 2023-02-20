@@ -1,16 +1,15 @@
-﻿using System;
+﻿using ImportData.IntegrationServicesClient.Models;
+using NLog;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
-using NLog;
-using System.Linq;
-using ImportData.IntegrationServicesClient.Models;
 using System.IO;
 
 namespace ImportData
 {
   class CompanyDirective : Entity
   {
-    public int PropertiesCount = 13;
+    public int PropertiesCount = 14;
 
     public override int GetPropertiesCount()
     {
@@ -144,6 +143,8 @@ namespace ImportData
         return exceptionList;
       }
 
+      var regState = this.Parameters[shift + 13].Trim();
+
       try
       {
         var regDateBeginningOfDay = BeginningOfDay(regDate.UtcDateTime);
@@ -154,11 +155,8 @@ namespace ImportData
           companyDirective = new ICompanyDirective();
 
         companyDirective.Name = fileNameWithoutExtension;
-        companyDirective.DocumentRegister = documentRegisters;
         companyDirective.Created = DateTimeOffset.UtcNow;
         companyDirective.Name = fileNameWithoutExtension;
-        companyDirective.RegistrationDate = regDate != DateTimeOffset.MinValue ? regDate.UtcDateTime : Constants.defaultDateTime;
-        companyDirective.RegistrationNumber = regNumber;
         companyDirective.DocumentKind = documentKind;
         companyDirective.Subject = subject;
         companyDirective.BusinessUnit = businessUnit;
@@ -169,10 +167,16 @@ namespace ImportData
         companyDirective.LifeCycleState = lifeCycleState;
         companyDirective.Note = note;
 
-        var createdOrder = BusinessLogic.CreateEntity<ICompanyDirective>(companyDirective, exceptionList, logger);
+        companyDirective.DocumentRegister = documentRegisters;
+        companyDirective.RegistrationDate = regDate != DateTimeOffset.MinValue ? regDate.UtcDateTime : Constants.defaultDateTime;
+        companyDirective.RegistrationNumber = regNumber;
+        if (!string.IsNullOrEmpty(companyDirective.RegistrationNumber) && companyDirective.DocumentRegister != null)
+          companyDirective.RegistrationState = BusinessLogic.GetRegistrationsState(regState);
+
+        var createdcompanyDirective = BusinessLogic.CreateEntity<ICompanyDirective>(companyDirective, exceptionList, logger);
 
         if (!string.IsNullOrWhiteSpace(filePath))
-          exceptionList.AddRange(BusinessLogic.ImportBody(createdOrder, filePath, logger));
+          exceptionList.AddRange(BusinessLogic.ImportBody(createdcompanyDirective, filePath, logger));
 
         var documentRegisterId = 0;
 
@@ -187,6 +191,10 @@ namespace ImportData
 
             return exceptionList;
           }
+        
+        // Дополнительно обновляем свойство Состояние, так как после установки регистрационного номера Состояние сбрасывается в значение "В разработке"
+        if (!string.IsNullOrEmpty(lifeCycleState))
+          createdcompanyDirective = createdcompanyDirective.UpdateLifeCycleState(createdcompanyDirective, lifeCycleState);
       }
       catch (Exception ex)
       {

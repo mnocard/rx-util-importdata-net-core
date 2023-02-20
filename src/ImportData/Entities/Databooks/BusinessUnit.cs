@@ -147,7 +147,7 @@ namespace ImportData
 
             if (!string.IsNullOrEmpty(this.Parameters[shift + 19]) && bank == null)
             {
-                var message = string.Format("Не найден Банк \"{1}\". Наименование НОР: \"{0}\". ", name, this.Parameters[shift + 18].Trim());
+                var message = string.Format("Не найден Банк \"{1}\". Наименование НОР: \"{0}\". ", name, this.Parameters[shift + 19].Trim());
                 exceptionList.Add(new Structures.ExceptionsStruct { ErrorType = Constants.ErrorTypes.Warn, Message = message });
                 logger.Warn(message);
             }

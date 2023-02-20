@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ImportData
 {
@@ -33,7 +30,7 @@ namespace ImportData
       public const string SupAgreements = "Доп.Соглашения";
       public const string IncomingLetters = "ВходящиеПисьма";
       public const string OutgoingLetters = "ИсходящиеПисьма";
-      public const string OutgoingLettersAddressees = "ИсходящиеПисьмаСписокПолучателей";
+      public const string OutgoingLettersAddressees = "ИсходящиеПисьмаАдресаты";
       public const string Orders = "Приказы";
       public const string Addendums = "Приложения";
       public const string Contact = "Контактные лица";
@@ -76,7 +73,8 @@ namespace ImportData
         {ImportDepartments, ImportDepartments},
         {ImportEmployees, ImportEmployees},
         {ImportContacts, ImportContacts},
-        {ImportCompanyDirectives, ImportCompanyDirectives}
+        {ImportCompanyDirectives, ImportCompanyDirectives},
+        {ImportLogins, ImportLogins}
       };
     }
 

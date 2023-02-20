@@ -8,7 +8,6 @@ namespace ImportData.IntegrationServicesClient.Models
   [EntityName("Исходящее письмо")]
   class IOutgoingLetters : IOfficialDocuments
   {
-    public int Id { get; set; }
     public bool IsManyAddressees { get; set; }
     public IEmployees Addressee { get; set; }
     public IEmployees Assignee { get; set; }
